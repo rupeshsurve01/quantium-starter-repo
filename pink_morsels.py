@@ -1,22 +1,28 @@
 import pandas as pd
 import os
 
-# Folder where CSV files are stored
 data_folder = "data"
-
-# List to store all data
 all_data = []
 
-# Read all CSV files from the data folder
 for file in os.listdir(data_folder):
     if file.endswith(".csv"):
         file_path = os.path.join(data_folder, file)
         df = pd.read_csv(file_path)
 
-        # Keep only Pink Morsels
-        df = df[df["product"] == "Pink Morsels"]
+        # Clean product column
+        df["product"] = df["product"].astype(str).str.strip().str.lower()
 
-        # Create Sales column
+        # Keep only pink morsel
+        df = df[df["product"] == "pink morsel"]
+
+        # ✅ CLEAN PRICE (remove $ sign and convert to number)
+        df["price"] = df["price"].astype(str).str.replace("$", "", regex=False)
+        df["price"] = pd.to_numeric(df["price"], errors="coerce")
+
+        # ✅ Convert quantity to number
+        df["quantity"] = pd.to_numeric(df["quantity"], errors="coerce")
+
+        # ✅ NOW calculate Sales correctly
         df["Sales"] = df["quantity"] * df["price"]
 
         # Keep only required columns
@@ -24,10 +30,14 @@ for file in os.listdir(data_folder):
 
         all_data.append(df)
 
-# Combine all three CSV files into one
-final_df = pd.concat(all_data)
+# Combine all data
+final_df = pd.concat(all_data, ignore_index=True)
 
-# Save final output file
+# Remove any bad rows
+final_df = final_df.dropna(subset=["Sales", "date"])
+
+# Save output
 final_df.to_csv("final_output.csv", index=False)
 
-print("Final output file created successfully ✅")
+print("✅ final_output.csv created successfully!")
+print(final_df.head())
